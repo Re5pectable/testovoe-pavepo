@@ -1,0 +1,39 @@
+version: "3.8"
+
+x-environment: &environment
+  DEBUG: ${DEBUG}
+
+  DB_HOST: pavepo-db
+  DB_NAME: ${DB_NAME}
+  DB_USERNAME: ${DB_USERNAME}
+  DB_PASSWORD: ${DB_PASSWORD}
+
+
+services:
+
+  pavepo-api:
+    container_name: pavepo-api
+    build: ./src
+    volumes:
+      - ./src:/usr/app/src
+    ports:
+      - 8000:8000
+    environment:
+      <<: *environment
+    depends_on:
+      - pavepo-db
+
+  pavepo-db:
+    container_name: pavepo-db
+    image: postgres:16
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - v_pavepo_db:/var/lib/postgresql/data
+
+volumes:
+  v_pavepo_db:
