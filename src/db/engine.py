@@ -16,14 +16,15 @@ Session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
 # Dependency
-async def get_session() -> AsyncSession: # type: ignore
+async def get_session() -> AsyncSession:  # type: ignore
     async with Session() as session:
         yield session
 
 
 class UnitOfWork:
-    def __init__(self, session_factory=Session):
+    def __init__(self, autocommit=True, session_factory=Session):
         self.session_factory = session_factory
+        self.autocommit = autocommit
 
     async def __aenter__(self):
         self.session = self.session_factory()
@@ -31,7 +32,7 @@ class UnitOfWork:
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         try:
-            if exc_type is None:
+            if exc_type is None and self.autocommit:
                 await self.session.commit()
         except IntegrityError as e:
             detail = str(e.orig.args[0])
