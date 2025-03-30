@@ -1,17 +1,10 @@
-import os
-
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-HOST: str = os.getenv("DB_HOST")
-DATABASE: str = os.getenv("DB_NAME")
-USER: str = os.getenv("DB_USERNAME")
-PASSWORD: str = os.getenv("DB_PASSWORD")
+from ..config import DB_URL
 
-URL = f"postgresql+asyncpg://{USER}:{PASSWORD}@{HOST}/{DATABASE}"
-
-engine = create_async_engine(URL)
+engine = create_async_engine(DB_URL)
 Session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
@@ -22,12 +15,11 @@ async def get_session() -> AsyncSession:  # type: ignore
 
 
 class UnitOfWork:
-    def __init__(self, autocommit=True, session_factory=Session):
-        self.session_factory = session_factory
+    def __init__(self, autocommit=True):
         self.autocommit = autocommit
 
     async def __aenter__(self):
-        self.session = self.session_factory()
+        self.session = Session()
         return self.session
 
     async def __aexit__(self, exc_type, exc_value, traceback):
@@ -35,8 +27,8 @@ class UnitOfWork:
             if exc_type is None and self.autocommit:
                 await self.session.commit()
         except IntegrityError as e:
+            await self.session.rollback()
             detail = str(e.orig.args[0])
             raise ValueError(detail.split("\n")[1])
         finally:
-            await self.session.rollback()
             await self.session.close()

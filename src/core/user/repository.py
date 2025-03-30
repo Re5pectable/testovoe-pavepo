@@ -2,7 +2,7 @@ from ...db import UnitOfWork, OrmUser, OrmUserExternalOauth, OrmSession
 from sqlalchemy import select, update
 
 
-async def get_user_by_external_id(external_id: str):
+async def get_user_by_external_id(external_id: str) -> OrmUser | None:
     async with UnitOfWork(autocommit=False) as session:
         stmt = (
             select(OrmUser)
@@ -19,7 +19,7 @@ async def create_user(
     name: str,
     surname: str,
     external_id: str | None = None,
-):
+) -> OrmUser:
     async with UnitOfWork() as session:
         user = OrmUser(email=email, name=name, surname=surname)
         session.add(user)

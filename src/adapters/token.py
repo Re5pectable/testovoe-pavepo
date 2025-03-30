@@ -26,7 +26,7 @@ class Token:
 
 class AccessToken(Token):
     def __init__(self, claims: dict):
-        expires = datetime.now(timezone.utc) + timedelta(
+        expires = datetime.now() + timedelta(
             seconds=config.JWT_ACCESS_EXP_SEC
         )
         super().__init__(claims, expires)
@@ -34,7 +34,7 @@ class AccessToken(Token):
 
 class RefreshToken(Token):
     def __init__(self, claims: dict):
-        expires = datetime.now(timezone.utc) + timedelta(
+        expires = datetime.now() + timedelta(
             seconds=config.JWT_REFRESH_EXP_SEC
         )
         super().__init__(claims, expires)

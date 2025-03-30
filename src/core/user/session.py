@@ -1,8 +1,9 @@
-from pydantic import BaseModel
-from ...db import RepositoryMixin, OrmSession
-from uuid import UUID
 from datetime import datetime
-from ...adapters.token import AccessToken
+from uuid import UUID
+
+from pydantic import BaseModel
+
+from ...db import OrmSession, RepositoryMixin
 
 
 class Session(BaseModel, RepositoryMixin):
