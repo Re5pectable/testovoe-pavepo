@@ -1,4 +1,5 @@
 import traceback as tb
+import json
 
 from jose import JWTError
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -14,7 +15,7 @@ def _extract_session_id(headers: dict[str, str]):
     auth = headers.get("Authorization")
     if not auth or not auth.startswith("Bearer "):
         return None
-    
+
     token_str = auth.removeprefix("Bearer ")
     try:
         token = Token.from_jwt(token_str)
@@ -22,12 +23,17 @@ def _extract_session_id(headers: dict[str, str]):
     except JWTError:
         return None
 
+
 async def _get_body(request: Request):
-    body = await request.json()
-    if request.url == "/login/yandex":
-        print(123)
+    body = await request.body()
+    body = body.decode()
+    if not body:
+        return None
+    body = json.loads(body)
+    if request.url.path == "/login/yandex":
+        body["token"] = "***"
     return body
-    
+
 
 class LoggingMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp):
@@ -39,7 +45,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         query = dict(request.query_params)
         body = await _get_body(request)
         method = request.method
-        uri = str(request.url)
+        uri = request.url.path
         session_id = _extract_session_id(request.headers)
 
         status_code = 200
@@ -52,18 +58,18 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             status_code = 400
             response = JSONResponse({"detail": "Unexpected error"}, status_code=400)
 
-        async with UnitOfWork() as session:
-            log = OrmApiLog(
-                uri=uri,
-                method=method,
-                headers=headers,
-                cookies=cookies,
-                session_id=session_id,
-                query=query,
-                body=body,
-                status_code=status_code,
-                traceback=tb_str,
-            )
-            session.add(log)
+        # async with UnitOfWork() as session:
+        #     log = OrmApiLog(
+        #         uri=uri,
+        #         method=method,
+        #         headers=headers,
+        #         cookies=cookies,
+        #         session_id=session_id,
+        #         query=query,
+        #         body=body,
+        #         status_code=status_code,
+        #         traceback=tb_str,
+        #     )
+        #     session.add(log)
 
         return response

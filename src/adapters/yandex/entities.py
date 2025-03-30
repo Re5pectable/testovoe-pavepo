@@ -23,7 +23,7 @@ class UserInfo:
             last_name=response.get("last_name"),
             email=response.get("default_email"),
             phone=response.get("default_phone", {}).get("number"),
-            birthdate=(
+            birthday=(
                 datetime.strptime(response["birthday"], "%Y-%m-%d")
                 if response.get("birthday")
                 else None

@@ -1,14 +1,5 @@
 version: "3.8"
 
-x-environment: &environment
-  DEBUG: ${DEBUG}
-
-  DB_HOST: pavepo-db
-  DB_NAME: ${DB_NAME}
-  DB_USERNAME: ${DB_USERNAME}
-  DB_PASSWORD: ${DB_PASSWORD}
-
-
 services:
 
   pavepo-api:
@@ -19,7 +10,16 @@ services:
     ports:
       - 8000:8000
     environment:
-      <<: *environment
+      DEBUG: ${DEBUG}
+      DB_HOST: ${DB_HOST}
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_ALGO: ${JWT_ALGO}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ACCESS_EXP_SEC: ${JWT_ACCESS_EXP_SEC}
+      JWT_REFRESH_EXP_SEC: ${JWT_REFRESH_EXP_SEC}
+      ALLOW_CORS_FROM: ${ALLOW_CORS_FROM}
     depends_on:
       - pavepo-db
 
