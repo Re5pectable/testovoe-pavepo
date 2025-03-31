@@ -31,8 +31,6 @@ ALLOWED_EXTENTIONS=mp3,wav,flac,aac,m4a,ogg,opus,alac,aif,aiff,wma,amr,ape,mp2
 
 ## 3. Прогон миграций (если база уже запущена)
 
-Выполните внутри контейнера:
-
 ```bash
 docker exec pavepo-api bash -c "cd src/db && alembic upgrade head"
 ```
