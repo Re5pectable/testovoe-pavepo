@@ -1,5 +1,6 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError
 
 from ..adapters.token import AccessToken
 from ..core.user import Session
@@ -14,14 +15,13 @@ class CredentialsException(HTTPException):
         )
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/yandex")
 
 
-async def get_session(token_str: str = Depends(oauth2_scheme)):
-    token = AccessToken.from_jwt(token_str)
-
-    session = await Session.db_get_or_none(id=token.claims["sid"])
-    if not session or not session.is_valid:
+async def get_session(token_str: str = Depends(oauth2_scheme)) -> Session:
+    try:
+        token = AccessToken.from_jwt(token_str)
+    except JWTError:
         raise CredentialsException()
 
-    return session
+    return await Session.get(id=token.claims["sid"])

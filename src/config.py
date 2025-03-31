@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -39,4 +40,11 @@ JWT_REFRESH_EXP_SEC: int = _env2int("JWT_REFRESH_EXP_SEC", 60 * 60 * 24 * 3)
 MEDIA_PATH = os.path.dirname(os.path.realpath(__name__)) + "/media"
 Path(MEDIA_PATH).mkdir(parents=True, exist_ok=True)
 
-ALLOW_CORS_FROM: list[str] = os.getenv("ALLOW_CORS_FROM", "").split(",")
+ORIGINS: list[str] = os.getenv("ORIGINS", "").split(",")
+ALLOWED_EXTENTIONS: list[str]= os.getenv("ALLOWED_EXTENTIONS", "").split(",")
+
+logging.basicConfig(
+    level=logging.DEBUG if DEBUG else logging.INFO,
+    format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)

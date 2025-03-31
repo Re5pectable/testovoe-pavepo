@@ -6,7 +6,7 @@ services:
     container_name: pavepo-api
     build: ./src
     volumes:
-      - ./src:/usr/app/src
+      - ./media:/usr/app/media
     ports:
       - 8000:8000
     environment:
@@ -19,7 +19,8 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_ACCESS_EXP_SEC: ${JWT_ACCESS_EXP_SEC}
       JWT_REFRESH_EXP_SEC: ${JWT_REFRESH_EXP_SEC}
-      ALLOW_CORS_FROM: ${ALLOW_CORS_FROM}
+      ORIGINS: ${ORIGINS}
+      ALLOWED_EXTENTIONS: ${ALLOWED_EXTENTIONS}
     depends_on:
       - pavepo-db
 

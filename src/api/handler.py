@@ -1,39 +1,36 @@
-import traceback as tb
 import json
-from typing import Callable
+import logging
+import traceback as tb
 from functools import wraps
+from typing import Callable
 
-from jose import JWTError
-from fastapi import HTTPException
+from fastapi import HTTPException, Response
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from ..adapters.token import Token
+from ..config import DEBUG
+from ..core.user import Session, User
 from ..db import OrmApiLog, UnitOfWork
 
 
-def _extract_session_id(headers: dict[str, str]):
-    auth = headers.get("Authorization")
-    if not auth or not auth.startswith("Bearer "):
-        return None
-
-    token_str = auth.removeprefix("Bearer ")
-    try:
-        token = Token.from_jwt(token_str)
-        return token.claims.get("sid")
-    except JWTError:
-        return None
-
-
 async def _get_body(request: Request):
-    body = await request.body()
-    body = body.decode()
-    if not body:
+    try:
+        body = await request.body()
+        body = json.loads(body.decode())    
+    except Exception:
         return None
-    body = json.loads(body)
     if request.url.path == "/login/yandex":
         body["token"] = "***"
     return body
+
+async def _validate_admin(session: Session | None):
+    if not session:
+        raise HTTPException(401)
+    user = await User.get(id=session.user_id)
+    if not user:
+        raise HTTPException(401)
+    if not user.is_admin:
+        raise HTTPException(403)
 
 
 def api_handler(admin: bool = False):
@@ -41,6 +38,7 @@ def api_handler(admin: bool = False):
         @wraps(f)
         async def wrapper(*args, **kwargs):
             request: Request = kwargs.get("request")
+            session: Session = kwargs.get("session")
 
             headers = dict(request.headers)
             cookies = dict(request.cookies)
@@ -48,13 +46,18 @@ def api_handler(admin: bool = False):
             body = await _get_body(request)
             method = request.method
             uri = request.url.path
-            session_id = _extract_session_id(request.headers)
 
             status_code = 200
             tb_str = None
             try:
+                if admin:
+                   await _validate_admin(session)
+                
                 response = await f(*args, **kwargs)
-                status_code = response.status_code
+                
+                if isinstance(response, Response):
+                    status_code = response.status_code
+                
                 return response
             
             except HTTPException as e:
@@ -63,24 +66,27 @@ def api_handler(admin: bool = False):
                 
             except Exception:
                 tb_str = tb.format_exc()
+                if DEBUG:
+                    logging.debug(tb_str)
                 status_code = 400
                 response = JSONResponse(
                     {"detail": "Unexpected error"}, status_code=status_code
                 )
+                return response
             finally:
-                async with UnitOfWork() as session:
+                async with UnitOfWork() as db_session:
                     log = OrmApiLog(
                         uri=uri,
                         method=method,
                         headers=headers,
                         cookies=cookies,
-                        session_id=session_id,
+                        session_id=session.id if session else None,
                         query=query,
                         body=body,
                         status_code=status_code,
                         traceback=tb_str,
                     )
-                    session.add(log)
+                    db_session.add(log)
 
         return wrapper
 

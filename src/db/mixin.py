@@ -61,15 +61,11 @@ class RepositoryMixin:
         q = await cls._db_get(limit=1, **kwargs)
         q_first = q.scalars().first()
         if q_first:
-            return TypeAdapter(
-                cls, config=ConfigDict(from_attributes=True)
-            ).validate_python(q_first)
+            return TypeAdapter(cls).validate_python(q_first)
         return None
 
     @classmethod
     async def db_get_many(cls, **kwargs):
         q = await cls._db_get(**kwargs)
         q_all = q.scalars().all()
-        return TypeAdapter(
-            list[cls], config=ConfigDict(from_attributes=True)
-        ).validate_python(q_all)
+        return TypeAdapter(list[cls]).validate_python(q_all)

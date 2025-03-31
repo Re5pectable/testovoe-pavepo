@@ -8,7 +8,7 @@ async def get_user_by_external_id(external_id: str) -> OrmUser | None:
             select(OrmUser)
             .select_from(OrmUser)
             .join(OrmUserExternalOauth, OrmUserExternalOauth.user_id == OrmUser.id)
-            .where(OrmUserExternalOauth.external_id == external_id)
+            .where(OrmUserExternalOauth.external_id == external_id, OrmUser.is_deleted.is_not(True))
         )
         q = await session.execute(stmt)
         return q.scalars().first()
